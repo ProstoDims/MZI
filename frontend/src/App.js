@@ -34,6 +34,13 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/lab1" element={<Lab1 />} />
+          <Route path="/lab2" element={<Lab1 />} />
+          <Route path="/lab3" element={<Lab1 />} />
+          <Route path="/lab4" element={<Lab1 />} />
+          <Route path="/lab5" element={<Lab1 />} />
+          <Route path="/lab6" element={<Lab1 />} />
+          <Route path="/lab7" element={<Lab1 />} />
+          <Route path="/lab8" element={<Lab1 />} />
         </Routes>
       </div>
     </Router>

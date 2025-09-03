@@ -1,26 +1,186 @@
-.lab1-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+.lab-content {
+  max-width: 600px;
+  margin: 0 auto;
   padding: 2rem;
-  text-align: center;
-  color: white;
+  animation: fadeInUp 0.8s ease;
 }
 
-.lab1-content h2 {
+.lab-content h2 {
   font-size: 2.5rem;
   font-weight: 300;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
   background: linear-gradient(135deg, #00d4ff 0%, #7c4dff 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.lab1-content p {
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.8);
-  max-width: 600px;
+.lab-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mode-selector {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.radio-label:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.radio-label input[type="radio"] {
+  accent-color: #00d4ff;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-group label {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.key-input {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.text-input {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: white;
+  font-family: monospace;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #00d4ff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.text-area {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: white;
+  font-family: monospace;
+  resize: vertical;
+  transition: all 0.3s ease;
+}
+
+.text-area:focus {
+  outline: none;
+  border-color: #00d4ff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.text-area.output {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.generate-btn,
+.process-btn {
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #00d4ff 0%, #7c4dff 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.generate-btn {
+  padding: 0.8rem 1.2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.generate-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.process-btn {
+  margin-top: 1rem;
+}
+
+.process-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.25);
+}
+
+.status-message {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+  color: #00d4ff;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .lab-content {
+    padding: 1rem;
+  }
+
+  .lab-content h2 {
+    font-size: 2rem;
+  }
+
+  .mode-selector {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .key-input {
+    flex-direction: column;
+  }
+
+  .generate-btn {
+    width: 100%;
+  }
 }
