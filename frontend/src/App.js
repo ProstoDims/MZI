@@ -5,6 +5,7 @@ import "./App.css";
 import Lab2 from "./components/Lab2/Lab2";
 import Lab3 from "./components/Lab3/Lab3";
 import Lab4 from "./components/Lab4/Lab4";
+import Lab5 from "./components/Lab5/Lab5";
 
 const Home = () => (
   <div className="main-content">
@@ -40,7 +41,7 @@ function App() {
           <Route path="/lab2" element={<Lab2 />} />
           <Route path="/lab3" element={<Lab3 />} />
           <Route path="/lab4" element={<Lab4 />} />
-          <Route path="/lab5" element={<Lab1 />} />
+          <Route path="/lab5" element={<Lab5 />} />
           <Route path="/lab6" element={<Lab1 />} />
           <Route path="/lab7" element={<Lab1 />} />
           <Route path="/lab8" element={<Lab1 />} />
