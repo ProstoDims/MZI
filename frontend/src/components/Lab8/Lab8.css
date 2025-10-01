@@ -1,0 +1,243 @@
+/* JPEGSteganography.css */
+.lab-content {
+  max-width: 750px;
+  margin: 0 auto;
+  padding: 2rem;
+  animation: fadeInUp 0.8s ease;
+}
+
+.lab-content h2 {
+  font-size: 2.2rem;
+  font-weight: 400;
+  margin-bottom: 1.8rem;
+  text-align: center;
+  background: linear-gradient(135deg, #00d4ff 0%, #7c4dff 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.lab-info {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lab-info p {
+  margin: 0 0 1rem 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+.algorithm-steps h4 {
+  margin: 0.5rem 0;
+  color: #00d4ff;
+  font-size: 0.9rem;
+}
+
+.algorithm-steps ol {
+  margin: 0.3rem 0 1rem 0;
+  padding-left: 1.2rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.algorithm-steps li {
+  margin-bottom: 0.3rem;
+}
+
+.lab-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.mode-selector {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.radio-label:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.radio-label input[type="radio"] {
+  accent-color: #00d4ff;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.text-input {
+  flex: 1;
+  padding: 0.6rem 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: white;
+  font-family: monospace;
+  font-size: 0.85rem;
+  transition: border-color 0.3s ease;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #00d4ff;
+}
+
+.text-area {
+  width: 100%;
+  padding: 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: white;
+  font-family: monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+}
+
+.text-area:focus {
+  outline: none;
+  border-color: #00d4ff;
+}
+
+.text-area.output {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.generate-btn,
+.process-btn {
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-size: 0.9rem;
+}
+
+.generate-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  white-space: nowrap;
+}
+
+.process-btn {
+  background: linear-gradient(135deg, #00d4ff 0%, #7c4dff 100%);
+  color: white;
+}
+
+.generate-btn:hover,
+.process-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.generate-btn:disabled,
+.process-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.status-message {
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  text-align: center;
+  color: #00d4ff;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.image-preview {
+  flex: 1;
+  min-width: 300px;
+}
+
+.image-preview h4 {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.preview-img {
+  width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .lab-content {
+    padding: 1rem;
+    max-width: 100%;
+  }
+  .lab-content h2 {
+    font-size: 1.8rem;
+  }
+  .mode-selector {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .generate-btn,
+  .process-btn {
+    width: 100%;
+  }
+  .algorithm-steps {
+    font-size: 0.8rem;
+  }
+  .image-preview {
+    min-width: 100%;
+  }
+}
+
+.status-message.error {
+  color: #ff4444;
+  border-color: rgba(255, 68, 68, 0.3);
+  background: rgba(255, 68, 68, 0.1);
+}

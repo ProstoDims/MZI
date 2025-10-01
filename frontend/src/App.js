@@ -8,6 +8,7 @@ import Lab4 from "./components/Lab4/Lab4";
 import Lab5 from "./components/Lab5/Lab5";
 import Lab6 from "./components/Lab6/Lab6";
 import Lab7 from "./components/Lab7/Lab7";
+import Lab8 from "./components/Lab8/Lab8";
 
 const Home = () => (
   <div className="main-content">
@@ -46,7 +47,7 @@ function App() {
           <Route path="/lab5" element={<Lab5 />} />
           <Route path="/lab6" element={<Lab6 />} />
           <Route path="/lab7" element={<Lab7 />} />
-          <Route path="/lab8" element={<Lab1 />} />
+          <Route path="/lab8" element={<Lab8 />} />
         </Routes>
       </div>
     </Router>
