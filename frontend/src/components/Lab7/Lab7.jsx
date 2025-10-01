@@ -1,11 +1,23 @@
 import React, { useState } from "react";
 import "./Lab7.css";
 
-// Упрощённая, но рабочая реализация эллиптической арифметики и ElGamal-ish схемы
+// ----- Нужные матем. утилиты -----
+const powMod = (base, exponent, modulus) => {
+  let result = 1n;
+  base = ((base % modulus) + modulus) % modulus;
+  let e = exponent;
+  while (e > 0n) {
+    if (e & 1n) result = (result * base) % modulus;
+    e >>= 1n;
+    base = (base * base) % modulus;
+  }
+  return result;
+};
+
+// ----- Эллиптическая кривая (secp256k1) -----
 class EllipticCurve {
   constructor(name) {
     this.name = name;
-    // secp256k1 параметры
     this.p = BigInt(
       "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"
     );
@@ -30,10 +42,10 @@ class EllipticCurve {
   }
 
   modInverse(a) {
-    let t = 0n,
-      newT = 1n;
-    let r = this.p,
-      newR = this.mod(a);
+    let t = 0n;
+    let newT = 1n;
+    let r = this.p;
+    let newR = this.mod(a);
     while (newR !== 0n) {
       const q = r / newR;
       [t, newT] = [newT, t - q * newT];
@@ -43,49 +55,34 @@ class EllipticCurve {
     return this.mod(t);
   }
 
-  // Проверка на бесконечность (null)
-  isInfinity(P) {
-    return P === null;
-  }
-
-  // Сложение точек, учитывая P + (-P) = O
   pointAdd(P, Q) {
     if (!P) return Q;
     if (!Q) return P;
 
-    const px = P.x,
-      py = P.y;
-    const qx = Q.x,
-      qy = Q.y;
-
-    if (px === qx) {
-      if (this.mod(py + qy) === 0n) {
-        // P + (-P) = O
-        return null;
-      }
-      // тогда P === Q → удвоение ниже
+    // P + (-P) = O
+    if (P.x === Q.x) {
+      if (this.mod(P.y + Q.y) === 0n) return null;
     }
 
     // Удвоение
-    if (px === qx && py === qy) {
-      const numerator = this.mod(3n * px * px + this.a);
-      const denomInv = this.modInverse(this.mod(2n * py));
-      const lambda = this.mod(numerator * denomInv);
-      const xr = this.mod(lambda * lambda - 2n * px);
-      const yr = this.mod(lambda * (px - xr) - py);
-      return { x: xr, y: yr };
+    if (P.x === Q.x && P.y === Q.y) {
+      const num = this.mod(3n * P.x * P.x + this.a);
+      const denInv = this.modInverse(this.mod(2n * P.y));
+      const lambda = this.mod(num * denInv);
+      const x3 = this.mod(lambda * lambda - 2n * P.x);
+      const y3 = this.mod(lambda * (P.x - x3) - P.y);
+      return { x: x3, y: y3 };
     }
 
-    // Обычное сложение P != Q
-    const numerator = this.mod(qy - py);
-    const denomInv = this.modInverse(this.mod(qx - px));
-    const lambda = this.mod(numerator * denomInv);
-    const xr = this.mod(lambda * lambda - px - qx);
-    const yr = this.mod(lambda * (px - xr) - py);
-    return { x: xr, y: yr };
+    // Обычное сложение
+    const num = this.mod(Q.y - P.y);
+    const denInv = this.modInverse(this.mod(Q.x - P.x));
+    const lambda = this.mod(num * denInv);
+    const x3 = this.mod(lambda * lambda - P.x - Q.x);
+    const y3 = this.mod(lambda * (P.x - x3) - P.y);
+    return { x: x3, y: y3 };
   }
 
-  // Умножение точки на скаляр (double-and-add)
   pointMultiply(k, P) {
     if (!P || k === 0n) return null;
     let result = null;
@@ -101,7 +98,6 @@ class EllipticCurve {
     return result;
   }
 
-  // Генерация приватного ключа 0 < key < n
   generatePrivateKey() {
     while (true) {
       const bytes = new Uint8Array(32);
@@ -133,35 +129,21 @@ class EllipticCurve {
     }
   }
 
-  // проверяет, является ли a квадратичным вычетом (Лежандров символ)
+  // Лежандров символ / проверка квадратичного вычета
   isQuadraticResidue(a) {
     const ls = powMod(a, (this.p - 1n) / 2n, this.p);
     return ls === 1n;
   }
 
-  // вычисление sqrt мод p (работает для p % 4 == 3)
+  // sqrt mod p (работает для p % 4 == 3, как в secp256k1)
   modSqrt(a) {
     if (a === 0n) return 0n;
     if (this.p % 4n === 3n) {
       return powMod(a, (this.p + 1n) / 4n, this.p);
     }
-    // Для простоты: мы поддерживаем только p%4==3 (secp256k1 удовлетворяет)
     return null;
   }
 }
-
-// Быстрое возведение в степень по модулю (используем в коде)
-const powMod = (base, exponent, modulus) => {
-  let result = 1n;
-  base = ((base % modulus) + modulus) % modulus;
-  let e = exponent;
-  while (e > 0n) {
-    if (e & 1n) result = (result * base) % modulus;
-    e >>= 1n;
-    base = (base * base) % modulus;
-  }
-  return result;
-};
 
 // ----- React компонент -----
 const Lab7 = () => {
@@ -174,9 +156,12 @@ const Lab7 = () => {
   const [status, setStatus] = useState("");
   const [curve] = useState(new EllipticCurve("secp256k1"));
 
-  // --- Утилиты для работы с байтами/строками/BigInt ---
-  const textToBytes = (text) => new TextEncoder().encode(text);
-  const bytesToText = (bytes) => new TextDecoder().decode(bytes);
+  // ----- Утилиты для байтов/BigInt/строк -----
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  const textToBytes = (text) => encoder.encode(text);
+  const bytesToText = (bytes) => decoder.decode(bytes);
 
   const bytesToBigInt = (bytes) => {
     let res = 0n;
@@ -187,7 +172,6 @@ const Lab7 = () => {
   };
 
   const bigIntToBytes = (num) => {
-    // Возвращает минимальный массив байт, ведущие нули отброшены
     if (num === 0n) return new Uint8Array([0]);
     let hex = num.toString(16);
     if (hex.length % 2) hex = "0" + hex;
@@ -199,48 +183,65 @@ const Lab7 = () => {
     return out;
   };
 
-  // ---- Обратимое кодирование текста в точку и обратно ----
-  // Метод: m = bytes_as_int, пробуем x = m*256 + j, j=0..255, ищем y, такое что (x,y) на кривой.
-  // Ограничение длины: m*256+255 < p → bytes length limited.
-  const MAX_MESSAGE_BYTES = 30; // безопасный лимит для демо на secp256k1 (30 байт << 256 bits)
+  // ----- Параметры кодирования -----
+  const MAX_MESSAGE_BYTES = 30; // байт на блок (демонстрационно; можно менять)
+
+  // Безопасная нарезка: НЕ режем UTF-8 посреди символа.
+  // Наращиваем символы, пока байтовый размер не превысит лимит.
+  const splitMessage = (msg, maxBytes = MAX_MESSAGE_BYTES) => {
+    const chunks = [];
+    let cur = "";
+    let curBytes = 0;
+    for (const ch of msg) {
+      const b = encoder.encode(ch);
+      if (curBytes + b.length > maxBytes) {
+        if (cur.length === 0) {
+          // символ сам по себе больше лимита — это редкий крайний случай
+          throw new Error(
+            `Символ занимает больше ${maxBytes} байт (невозможно упаковать)`
+          );
+        }
+        chunks.push(cur);
+        cur = ch;
+        curBytes = b.length;
+      } else {
+        cur += ch;
+        curBytes += b.length;
+      }
+    }
+    if (cur.length > 0) chunks.push(cur);
+    return chunks;
+  };
+
+  // ----- Обратимое кодирование text <-> point (Koblitz-like: m*256 + j) -----
   const textToPoint = (text) => {
     const bytes = textToBytes(text);
     if (bytes.length === 0) throw new Error("Пустое сообщение");
     if (bytes.length > MAX_MESSAGE_BYTES)
-      throw new Error(
-        `Сообщение слишком длинное — максимум ${MAX_MESSAGE_BYTES} байт`
-      );
+      throw new Error(`Блок больше ${MAX_MESSAGE_BYTES} байт`);
 
-    const m = bytesToBigInt(bytes); // целое, представляющее сообщение
-    // мы будем пробовать j в диапазоне 0..255
+    const m = bytesToBigInt(bytes); // целое, представляющее блок
     for (let j = 0; j < 256; j++) {
       const x = m * 256n + BigInt(j);
-      if (x >= curve.p) break; // дальше уже невалидно
+      if (x >= curve.p) break;
       const rhs = curve.mod(x * x * x + curve.a * x + curve.b);
-      // проверяем, квадратичный ли это остаток
       if (!curve.isQuadraticResidue(rhs)) continue;
-      // получаем y
       const y = curve.modSqrt(rhs);
       if (y === null) continue;
-      // выберем положительную ветвь y (можно и любую)
-      return { x: x, y: y };
+      return { x, y }; // x уже содержит m*256+j — в pointToText возьмём floor(x/256) и восстановим bytes
     }
-    throw new Error(
-      "Не удалось закодировать текст в точку (нет подходящего x)"
-    );
+    throw new Error("Не удалось закодировать блок в точку (нет подходящего x)");
   };
 
   const pointToText = (point) => {
     if (!point) return "";
     const x = point.x;
-    // m = floor(x / 256)
-    const m = x >> 8n; // деление на 256
+    const m = x >> 8n; // floor(x / 256)
     const bytes = bigIntToBytes(m);
-    // удалим ведущие нули если есть (bigIntToBytes уже минимален)
     return bytesToText(bytes);
   };
 
-  // ---- Ключи ----
+  // ----- Ключи -----
   const generateKeyPair = () => {
     setStatus("Генерация ключевой пары...");
     try {
@@ -255,78 +256,74 @@ const Lab7 = () => {
     }
   };
 
-  // ---- ElGamal-like шифрование: C1 = kG, C2 = M + k*Pb ----
+  // ----- Шифрование (блоки) -----
   const encryptText = () => {
     if (!publicKey) {
-      setStatus("Сначала сгенерируйте публичный ключ");
+      setStatus("Ошибка: сначала сгенерируйте ключевую пару");
       return;
     }
     if (!inputText) {
-      setStatus("Введите текст для шифрования");
+      setStatus("Ошибка: введите текст");
       return;
     }
 
     setStatus("Шифрование...");
     try {
-      // кодируем сообщение в точку M (обратимо)
-      const M = textToPoint(inputText);
-
-      // ephemeral
-      const k = curve.generatePrivateKey();
-      const C1 = curve.pointMultiply(k, curve.G);
-
       const Pb = curve.stringToPoint(publicKey);
-      if (!Pb) throw new Error("Неверный формат публичного ключа");
+      if (!Pb) throw new Error("Неверный публичный ключ");
 
-      const kPb = curve.pointMultiply(k, Pb);
-      const C2 = curve.pointAdd(M, kPb);
+      const chunks = splitMessage(inputText, MAX_MESSAGE_BYTES);
+      const blocks = chunks.map((block) => {
+        const M = textToPoint(block);
+        const k = curve.generatePrivateKey();
+        const C1 = curve.pointMultiply(k, curve.G);
+        const kPb = curve.pointMultiply(k, Pb);
+        const C2 = curve.pointAdd(M, kPb);
+        return { C1: curve.pointToString(C1), C2: curve.pointToString(C2) };
+      });
 
-      const encrypted = {
-        curve: curveParams,
-        C1: curve.pointToString(C1),
-        C2: curve.pointToString(C2),
-        timestamp: Date.now(),
-      };
-
+      const encrypted = { curve: curveParams, blocks, timestamp: Date.now() };
       setOutputText(JSON.stringify(encrypted, null, 2));
-      setStatus("Зашифровано (ElGamal on EC)");
+      setStatus(`Зашифровано (${blocks.length} блоков)`);
     } catch (err) {
       setStatus("Ошибка при шифровании: " + err.message);
     }
   };
 
-  // ---- Дешифрование ElGamal: M = C2 - d*C1 ----
+  // ----- Дешифрование (блоки) -----
   const decryptText = () => {
     if (!privateKey) {
-      setStatus("Укажите приватный ключ");
+      setStatus("Ошибка: укажите приватный ключ");
       return;
     }
     if (!inputText) {
-      setStatus("Вставьте зашифрованный JSON");
+      setStatus("Ошибка: вставьте JSON с блоками");
       return;
     }
 
     setStatus("Дешифрование...");
     try {
       const enc = JSON.parse(inputText);
-      const C1 = curve.stringToPoint(enc.C1);
-      const C2 = curve.stringToPoint(enc.C2);
-      if (!C1 || !C2) throw new Error("Неверный формат C1/C2");
+      if (!enc.blocks || !Array.isArray(enc.blocks))
+        throw new Error("Неверный формат: нет массива блоков");
 
       const d = BigInt("0x" + privateKey);
-      // s = d * C1
-      const sC1 = curve.pointMultiply(d, C1);
-      if (!sC1) throw new Error("sC1 = O (ошибка ключа?)");
+      const resultBlocks = enc.blocks.map(({ C1, C2 }, idx) => {
+        const C1p = curve.stringToPoint(C1);
+        const C2p = curve.stringToPoint(C2);
+        if (!C1p || !C2p)
+          throw new Error(`Неверный формат точек в блоке ${idx}`);
 
-      // -sC1
-      const negS = { x: sC1.x, y: curve.mod(-sC1.y) };
+        const sC1 = curve.pointMultiply(d, C1p);
+        if (!sC1) throw new Error(`sC1 = O для блока ${idx} (ключ?)`);
+        const negS = { x: sC1.x, y: curve.mod(-sC1.y) };
+        const M = curve.pointAdd(C2p, negS);
+        if (!M) throw new Error(`Восстановленная точка = O для блока ${idx}`);
+        return pointToText(M);
+      });
 
-      const M = curve.pointAdd(C2, negS);
-      if (!M) throw new Error("Восстановленная точка = бесконечность");
-
-      const plaintext = pointToText(M);
-      setOutputText(plaintext);
-      setStatus("Дешифровано (ElGamal on EC)");
+      setOutputText(resultBlocks.join(""));
+      setStatus(`Дешифровано (${resultBlocks.length} блоков)`);
     } catch (err) {
       setStatus("Ошибка при дешифровании: " + err.message);
     }
@@ -345,16 +342,14 @@ const Lab7 = () => {
 
   return (
     <div className="lab-content">
-      <h2>Аналог Эль-Гамаля на эллиптических кривых (обратимое кодирование)</h2>
+      <h2>Эль-Гамаль на эллиптических кривых (блоки, обратимая кодировка)</h2>
+
       <div className="lab-info">
         <p>
-          Схема: кодируем сообщение в точку M (обратимо) → C1 = kG, C2 = M +
-          k*Pb. Дешифровка: M = C2 − d*C1, затем M → текст.
+          Схема: блоки (UTF-8 safe) → обратимое кодирование в точку → C1 = kG,
+          C2 = M + k·Pb
         </p>
-        <p style={{ color: "gray" }}>
-          Примечание: сообщение ограничено по длине (по умолчанию{" "}
-          {MAX_MESSAGE_BYTES} байт) из-за способа кодирования.
-        </p>
+        <p style={{ color: "gray" }}>Макс байт на блок: {MAX_MESSAGE_BYTES}</p>
       </div>
 
       <div className="lab-controls">
@@ -400,7 +395,7 @@ const Lab7 = () => {
               className="text-input"
               value={privateKey}
               onChange={(e) => setPrivateKey(e.target.value)}
-              placeholder="Приватный ключ будет сгенерирован автоматически"
+              placeholder="Приватный ключ будет сгенерирован"
             />
             <button className="generate-btn" onClick={generateKeyPair}>
               Сгенерировать ключи
@@ -422,7 +417,7 @@ const Lab7 = () => {
         <div className="input-group">
           <label>
             {mode === "encrypt"
-              ? `Исходный текст (макс ${MAX_MESSAGE_BYTES} байт):`
+              ? "Исходный текст:"
               : "Зашифрованные данные (JSON):"}
           </label>
           <textarea
@@ -432,8 +427,8 @@ const Lab7 = () => {
             onChange={(e) => setInputText(e.target.value)}
             placeholder={
               mode === "encrypt"
-                ? "Введите текст для шифрования (короткий)"
-                : "Вставьте сюда JSON с C1 и C2"
+                ? "Введите текст (любой длины — он разобьётся на блоки)"
+                : "Вставьте сюда JSON, полученный ранее"
             }
           />
         </div>
@@ -441,7 +436,6 @@ const Lab7 = () => {
         <button className="process-btn" onClick={handleProcess}>
           {mode === "encrypt" ? "Зашифровать" : "Дешифровать"}
         </button>
-
         <button className="generate-btn" onClick={clearAll}>
           Очистить все
         </button>
@@ -455,11 +449,6 @@ const Lab7 = () => {
             rows="6"
             value={outputText}
             readOnly
-            placeholder={
-              mode === "encrypt"
-                ? "Здесь появятся C1 и C2 в JSON"
-                : "Здесь появится дешифрованный текст"
-            }
           />
         </div>
       </div>
