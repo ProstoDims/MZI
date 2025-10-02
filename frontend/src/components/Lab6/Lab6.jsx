@@ -10,24 +10,22 @@ const Lab6 = () => {
   const [signature, setSignature] = useState("");
   const [status, setStatus] = useState("");
 
-  // ------------------------
-  // ПАРАМЕТРЫ КРИВОЙ secp256k1 (как в Bitcoin)
-  // ------------------------
   const curveParams = {
+    // id-tc26-gost-3410-2012-256-paramSetA
     p: BigInt(
-      "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"
+      "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD97"
     ),
-    a: BigInt(0),
-    b: BigInt(7),
+    a: BigInt(
+      "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD94"
+    ),
+    b: BigInt(166),
     q: BigInt(
-      "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"
+      "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF6C611070995AD10045841B09B761B893"
     ),
-    // Базовая точка G для secp256k1
-    x: BigInt(
-      "0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"
-    ),
+    // Базовая точка G
+    x: BigInt("0x1"),
     y: BigInt(
-      "0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8"
+      "0x8D91E471E0989CDA27DF505A453F2B7635294F2DDF23E3B122ACC99C9E9F1E14"
     ),
   };
 
@@ -76,24 +74,20 @@ const Lab6 = () => {
   const modSub = (a, b, m) => mod(a - b, m);
   const modMul = (a, b, m) => mod(a * b, m);
 
-  const modPow = (base, exponent, modulus) => {
-    if (modulus === BigInt(1)) return BigInt(0);
-    let result = BigInt(1);
-    base = mod(base, modulus);
-
-    while (exponent > BigInt(0)) {
-      if (exponent % BigInt(2) === BigInt(1)) {
-        result = modMul(result, base, modulus);
-      }
-      exponent = exponent / BigInt(2);
-      base = modMul(base, base, modulus);
-    }
-    return result;
-  };
-
   const modInverse = (a, m) => {
-    // Используем малую теорему Ферма для простых модулей
-    return modPow(a, m - BigInt(2), m);
+    // Используем расширенный алгоритм Евклида для ГОСТ
+    let [old_r, r] = [a, m];
+    let [old_s, s] = [BigInt(1), BigInt(0)];
+    let [old_t, t] = [BigInt(0), BigInt(1)];
+
+    while (r !== BigInt(0)) {
+      const quotient = old_r / r;
+      [old_r, r] = [r, old_r - quotient * r];
+      [old_s, s] = [s, old_s - quotient * s];
+      [old_t, t] = [t, old_t - quotient * t];
+    }
+
+    return mod(old_s, m);
   };
 
   // ------------------------
@@ -168,26 +162,38 @@ const Lab6 = () => {
   };
 
   // ------------------------
-  // Криптографический хеш (упрощенный SHA-256)
+  // УЛУЧШЕННАЯ Хеш-функция (фиксированная версия)
   // ------------------------
   const hashMessage = (msg) => {
-    // Упрощенная имитация SHA-256
-    let hash = BigInt(0x6a09e667);
+    if (!msg || msg.length === 0) {
+      return BigInt(1); // Минимальное значение для пустого сообщения
+    }
+
+    // Используем более сложную хеш-функцию на основе полиномиального хеширования
+    const prime = BigInt(1099511628211); // Большое простое число
+    const base = BigInt(16777619);
+
+    let hash = BigInt(0);
 
     for (let i = 0; i < msg.length; i++) {
       const charCode = BigInt(msg.charCodeAt(i));
-      // Простая хеш-функция на основе сдвигов и XOR
-      hash = (hash << BigInt(5)) ^ (hash >> BigInt(2)) ^ charCode;
-      hash = hash & BigInt(0xffffffff);
+      hash = (hash * base + charCode) % prime;
     }
+
+    // Дополнительное перемешивание
+    hash = hash ^ (hash >> BigInt(13));
+    hash = hash * prime;
+    hash = hash ^ (hash >> BigInt(15));
 
     // Преобразуем в число в диапазоне [1, q-1]
     let result = mod(hash, curveParams.q - BigInt(1)) + BigInt(1);
+
+    console.log("Хеш сообщения:", msg, "->", result.toString(16));
     return result;
   };
 
   // ------------------------
-  // Генерация случайного BigInt
+  // Генерация случайного BigInt по ГОСТ
   // ------------------------
   const generateRandomBigInt = (max) => {
     const bytesNeeded = Math.ceil(max.toString(16).length / 2);
@@ -203,13 +209,13 @@ const Lab6 = () => {
   };
 
   // ------------------------
-  // Генерация ключей
+  // Генерация ключей по ГОСТ
   // ------------------------
   const generateKeys = () => {
     try {
       setStatus("Генерация ключей...");
 
-      // Генерируем случайный приватный ключ
+      // Генерируем случайный приватный ключ (d) в диапазоне [1, q-1]
       const d = generateRandomBigInt(curveParams.q);
 
       const G = { x: curveParams.x, y: curveParams.y };
@@ -224,9 +230,9 @@ const Lab6 = () => {
 
       setPrivateKey(privKeyHex);
       setPublicKey(pubKeyHex);
-      setStatus("✓ Ключи успешно сгенерированы");
+      setStatus("✓ Ключи успешно сгенерированы по ГОСТ");
 
-      console.log("Приватный ключ сгенерирован");
+      console.log("Приватный ключ сгенерирован (ГОСТ)");
       console.log("Публичный ключ:", Q);
     } catch (error) {
       console.error("Ошибка генерации ключей:", error);
@@ -235,7 +241,7 @@ const Lab6 = () => {
   };
 
   // ------------------------
-  // Генерация подписи ECDSA
+  // Генерация подписи по ГОСТ Р 34.10-2012
   // ------------------------
   const generateSignature = () => {
     if (!privateKey || !message) {
@@ -244,7 +250,7 @@ const Lab6 = () => {
     }
 
     try {
-      setStatus("Создание подписи...");
+      setStatus("Создание подписи по ГОСТ...");
 
       const d = safeHexToBigInt(privateKey);
       const h = hashMessage(message);
@@ -259,7 +265,7 @@ const Lab6 = () => {
           throw new Error("Не удалось создать подпись после 100 попыток");
         }
 
-        // Генерируем случайный эфемерный ключ
+        // Генерируем случайный эфемерный ключ k
         const k = generateRandomBigInt(curveParams.q);
 
         const R = pointMultiply(k, G);
@@ -269,24 +275,22 @@ const Lab6 = () => {
         r = mod(R.x, curveParams.q);
         if (r === BigInt(0)) continue;
 
-        // s = k⁻¹ * (h + r*d) mod q
-        const kInv = modInverse(k, curveParams.q);
-        s = modMul(
-          kInv,
-          modAdd(h, modMul(r, d, curveParams.q), curveParams.q),
-          curveParams.q
-        );
+        // s = (r*d + k*h) mod q - основная формула ГОСТ
+        const rd = modMul(r, d, curveParams.q);
+        const kh = modMul(k, h, curveParams.q);
+        s = modAdd(rd, kh, curveParams.q);
 
         if (s !== BigInt(0)) break;
       } while (true);
 
       const signatureHex = `${bigIntToHex(r)},${bigIntToHex(s)}`;
       setSignature(signatureHex);
-      setStatus("✓ ЭЦП успешно создана");
+      setStatus("✓ ЭЦП успешно создана по ГОСТ");
 
-      console.log("Подпись создана:");
+      console.log("Подпись создана (ГОСТ):");
       console.log("r:", r.toString(16));
       console.log("s:", s.toString(16));
+      console.log("h:", h.toString(16));
     } catch (error) {
       console.error("Ошибка создания подписи:", error);
       setStatus(`✗ Ошибка создания подписи: ${error.message}`);
@@ -294,7 +298,7 @@ const Lab6 = () => {
   };
 
   // ------------------------
-  // Проверка подписи ECDSA
+  // Проверка подписи по ГОСТ Р 34.10-2012 (ИСПРАВЛЕННАЯ)
   // ------------------------
   const verifySignature = () => {
     if (!publicKey || !message || !signature) {
@@ -303,7 +307,7 @@ const Lab6 = () => {
     }
 
     try {
-      setStatus("Проверка подписи...");
+      setStatus("Проверка подписи по ГОСТ...");
 
       // Парсим публичный ключ
       const pubParts = publicKey.split(",");
@@ -327,7 +331,7 @@ const Lab6 = () => {
       const r = safeHexToBigInt(sigParts[0]);
       const s = safeHexToBigInt(sigParts[1]);
 
-      // Проверяем диапазоны
+      // Проверяем диапазоны по ГОСТ
       if (
         r <= BigInt(0) ||
         r >= curveParams.q ||
@@ -340,37 +344,63 @@ const Lab6 = () => {
 
       const h = hashMessage(message);
 
-      // Алгоритм проверки ECDSA:
-      const w = modInverse(s, curveParams.q);
-      const u1 = modMul(h, w, curveParams.q);
-      const u2 = modMul(r, w, curveParams.q);
+      // Проверяем что h ≠ 0 mod q
+      const h_mod = mod(h, curveParams.q);
+      if (h_mod === BigInt(0)) {
+        setStatus("✗ ЭЦП недействительна: хеш равен 0");
+        return;
+      }
+
+      // ИСПРАВЛЕННЫЙ алгоритм проверки ГОСТ:
+      const hInv = modInverse(h_mod, curveParams.q);
+
+      // z1 = s * h⁻¹ mod q
+      const z1 = modMul(s, hInv, curveParams.q);
+
+      // z2 = -r * h⁻¹ mod q
+      const z2 = modMul(
+        modSub(BigInt(0), r, curveParams.q),
+        hInv,
+        curveParams.q
+      );
 
       const G = { x: curveParams.x, y: curveParams.y };
-      const point1 = pointMultiply(u1, G);
-      const point2 = pointMultiply(u2, Q);
+
+      // Вычисляем R' = z1*G + z2*Q
+      const point1 = pointMultiply(z1, G);
+      const point2 = pointMultiply(z2, Q);
 
       if (isInfinity(point1) || isInfinity(point2)) {
-        setStatus("✗ ЭЦП недействительна");
+        setStatus("✗ ЭЦП недействительна: бесконечная точка");
         return;
       }
 
-      const R = pointAdd(point1, point2);
+      const R_prime = pointAdd(point1, point2);
 
-      if (isInfinity(R)) {
-        setStatus("✗ ЭЦП недействительна");
+      if (isInfinity(R_prime)) {
+        setStatus("✗ ЭЦП недействительна: результат - бесконечность");
         return;
       }
 
-      const v = mod(R.x, curveParams.q);
+      // В ГОСТ сравниваем x-координату с r mod q
+      const v = mod(R_prime.x, curveParams.q);
       const isValid = v === r;
 
-      setStatus(isValid ? "✓ ЭЦП действительна" : "✗ ЭЦП недействительна");
+      console.log("Детали проверки:");
+      console.log("Сообщение:", message);
+      console.log("r:", r.toString(16));
+      console.log("s:", s.toString(16));
+      console.log("h:", h.toString(16));
+      console.log("hInv:", hInv.toString(16));
+      console.log("z1:", z1.toString(16));
+      console.log("z2:", z2.toString(16));
+      console.log("R'.x:", R_prime.x.toString(16));
+      console.log("v:", v.toString(16));
+      console.log("isValid:", isValid);
 
-      if (!isValid) {
-        console.log("Ошибка проверки:");
-        console.log("v:", v.toString(16));
-        console.log("r:", r.toString(16));
-      }
+      setStatus(
+        isValid ? "✓ ЭЦП действительна по ГОСТ" : "✗ ЭЦП недействительна"
+      );
     } catch (error) {
       console.error("Ошибка проверки подписи:", error);
       setStatus(`✗ Ошибка проверки подписи: ${error.message}`);
@@ -395,7 +425,7 @@ const Lab6 = () => {
 
   return (
     <div className="lab-content">
-      <h2>ЭЦП на эллиптической кривой secp256k1</h2>
+      <h2>ЭЦП по ГОСТ Р 34.10</h2>
 
       <div className="mode-selector">
         <label className="radio-label">
@@ -486,11 +516,11 @@ const Lab6 = () => {
         <div className="action-buttons">
           {mode === "generate" ? (
             <button className="process-btn" onClick={generateSignature}>
-              Сгенерировать ЭЦП
+              Сгенерировать ЭЦП по ГОСТ
             </button>
           ) : (
             <button className="process-btn" onClick={verifySignature}>
-              Проверить ЭЦП
+              Проверить ЭЦП по ГОСТ
             </button>
           )}
           <button className="clear-btn" onClick={clearAll}>
@@ -507,17 +537,6 @@ const Lab6 = () => {
             {status}
           </div>
         )}
-
-        <div className="info-panel">
-          <h4>Информация о кривой:</h4>
-          <ul>
-            <li>Кривая: secp256k1 (используется в Bitcoin)</li>
-            <li>Размер ключа: 256 бит</li>
-            <li>
-              Порядок группы: {curveParams.q.toString(16).substring(0, 20)}...
-            </li>
-          </ul>
-        </div>
       </div>
     </div>
   );
