@@ -1,4 +1,4 @@
-/* GOSTSignature.css */
+/* Lab6.css */
 .lab-content {
   max-width: 650px;
   margin: 0 auto;
@@ -108,8 +108,21 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
+.key-preview {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.8rem;
+}
+
 .generate-btn,
-.process-btn {
+.process-btn,
+.clear-btn {
   padding: 0.8rem 1.5rem;
   border-radius: 6px;
   font-weight: 500;
@@ -117,6 +130,7 @@
   transition: all 0.3s ease;
   border: none;
   font-size: 0.9rem;
+  flex: 1;
 }
 
 .generate-btn {
@@ -124,6 +138,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: white;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .process-btn {
@@ -131,21 +146,39 @@
   color: white;
 }
 
+.clear-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  flex: 0 0 auto;
+}
+
 .generate-btn:hover,
-.process-btn:hover {
+.process-btn:hover,
+.clear-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
 }
 
 .status-message {
   padding: 0.8rem;
-  background: rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   text-align: center;
-  color: #00d4ff;
   font-weight: 500;
   font-size: 0.9rem;
-  border: 1px solid rgba(0, 212, 255, 0.2);
+  border: 1px solid;
+}
+
+.status-success {
+  background: rgba(0, 212, 255, 0.1);
+  color: #00d4ff;
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.status-error {
+  background: rgba(255, 59, 92, 0.1);
+  color: #ff3b5c;
+  border-color: rgba(255, 59, 92, 0.3);
 }
 
 @keyframes fadeInUp {
@@ -170,11 +203,13 @@
     flex-direction: column;
     gap: 0.5rem;
   }
-  .key-input {
+  .key-input,
+  .action-buttons {
     flex-direction: column;
   }
   .generate-btn,
-  .process-btn {
+  .process-btn,
+  .clear-btn {
     width: 100%;
   }
 }
